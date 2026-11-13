@@ -208,6 +208,22 @@ p{margin:0;color:var(--muted);font-size:15px;line-height:1.5;max-width:34ch}
 .mode small{grid-column:1;font-size:12px;color:var(--muted);line-height:1.4}
 .mode .go{grid-row:1/3;grid-column:2;color:var(--lantern);font-weight:800}
 body.lefty .dash{right:auto;left:max(16px,env(safe-area-inset-left,0px))}
+/* keep panels inside the screen */
+.overlay{grid-template-columns:minmax(0,1fr)}
+.panel,.card,.scene{min-width:0;max-width:100%;justify-self:center}
+.tabs{min-width:0;max-width:100%}
+/* compact shop */
+#shopGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:360px){#shopGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#shopGrid .item{border-radius:12px}
+#shopGrid .item canvas{aspect-ratio:1/1;object-fit:cover}
+#shopGrid .item .meta{padding:7px 8px 8px;gap:5px}
+#shopGrid .item .name{font-size:12px;line-height:1.2}
+#shopGrid .item .desc{font-size:10.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#shopGrid .buy{font-size:11px;padding:7px 4px;border-radius:8px}
+#ovShop .panel{gap:10px}
+#ovShop .panel-head h2{font-size:20px}
+#shopTabs button{font-size:11.5px;padding:8px 9px}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);transform:translateX(-50%);padding:10px 18px;border-radius:999px;max-width:calc(100% - 32px);
   background:var(--paper);color:#1b1408;font-weight:800;font-size:14px;z-index:30;pointer-events:none;text-align:center}
 /* wide screens (computers, tablets in landscape): play in a centered column like a phone */
@@ -371,6 +387,7 @@ body.lefty .dash{right:auto;left:max(16px,env(safe-area-inset-left,0px))}
     <div class="tabs" role="tablist" id="qTabs">
       <button role="tab" data-tab="daily">На сегодня</button>
       <button role="tab" data-tab="ach">Достижения</button>
+      <button role="tab" data-tab="chal">Испытания</button>
     </div>
     <div class="list" id="qList"></div>
   </div>
@@ -548,6 +565,10 @@ const SKINS=[
   {id:'brig',  name:'Пиратский бриг',price:1500,desc:'Две мачты и чёрные паруса', shape:'brig', hull:'#6b4226',f1:'#4a2c18',line:'#1b1b1f',sail:'#1b1b1f'},
   {id:'dragon',name:'Драконья лодка',price:1700,desc:'С головой дракона на носу', shape:'dragon', hull:'#c2312b',f1:'#8f1f1a',line:'#f2c14c'},
   {id:'santa', name:'Новогодний',price:250, desc:'Бумажный кораблик в шапке Деда Мороза', shape:'paper', hull:'#f3eee2',f1:'#d9d2c1',f2:'#c9c1ae',line:'#a99f88',pattern:'santa'},
+  {id:'phoenix',name:'Феникс',price:-1,chal:'c5000',desc:'Огненная птица из бумаги',hull:'#ff8a3d',f1:'#e8602a',f2:'#c9461f',line:'#ffd23f',glow:'#ff7a2a',pattern:'flame'},
+  {id:'ghost', name:'Призрак',price:-1,chal:'cHard',desc:'Его почти не видно',hull:'#e8f4ff',f1:'#cfe4f5',f2:'#b8d4ea',line:'#9fc0dc',ghost:1},
+  {id:'crown', name:'Королевский',price:-1,chal:'cBoss',desc:'Для победителя всех боссов',hull:'#6b3fa0',f1:'#56328a',f2:'#442670',line:'#f2c14c',pattern:'crown'},
+  {id:'crystal',name:'Хрустальный',price:-1,chal:'c200',desc:'Прозрачный, как лёд',hull:'#bff4ff',f1:'#9fe2f5',f2:'#7fcde6',line:'#ffffff',pattern:'shine',glow:'#bff4ff'},
   {id:'ufo',   name:'НЛО',       price:2000,desc:'Прилетел с космической реки', shape:'ufo', hull:'#b9c3cc',f1:'#7c8894',line:'#7ff6ff',glow:'#7ff6ff'}
 ];
 const MAPS=[
@@ -579,6 +600,10 @@ const MAPS=[
    top:'#10304a',bot:'#1b4a6b',bank:'#e8f1f8',deco:'garland',decoC:'#2f6a4a',edge:'255,255,255',streak:'220,240,255',glow:'255,220,160',
    rock:'#f4f8fb',rockStyle:'snowman',log:'#7a4b2a',logLine:'#4a2d18',logEnd:'#a8764e',amb:'snow',
    mus:{bpm:100,root:60,scale:[0,2,4,7,9],wave:'triangle'}},
+  {id:'aurora',name:'Северное сияние', price:-1, chal:'cLevel', mult:2.4, desc:'Полярная ночь и сияние в небе', cycle:false, aurora:1,
+   top:'#061a24',bot:'#0b2c38',bank:'#d8e8ee',deco:'firs',decoC:'#1f4a3c',edge:'200,255,230',streak:'190,255,230',glow:'120,255,200',
+   rock:'#c9dff0',rockStyle:'ice',log:'#4a3526',logLine:'#2d2018',logEnd:'#7c5c43',amb:'snow',
+   mus:{bpm:70,root:62,scale:[0,2,4,7,9],wave:'sine'}},
   {id:'space', name:'Космическая река', price:3000, mult:2.6, desc:'Млечный путь и астероиды',
    top:'#05030f',bot:'#0c0826',bank:'#120c2e',deco:'stars',decoC:'#ffffff',edge:'170,150,255',streak:'200,190,255',glow:'180,160,255',
    rock:'#4a4560',rockStyle:'asteroid',log:'#3b3560',logLine:'#8f86c9',logEnd:'#5d5590',amb:'stars',
@@ -591,7 +616,8 @@ const TRAILS=[
   {id:'leaves', name:'Листья',      price:300, desc:'Осенние листья кружатся следом'},
   {id:'rainbow',name:'Радуга',      price:600, desc:'Разноцветная дорожка'},
   {id:'stars',  name:'Звёздная пыль',price:900,desc:'Мерцающие звёзды'},
-  {id:'hearts', name:'Сердечки',    price:1100,desc:'Для самых любимых корабликов'}
+  {id:'hearts', name:'Сердечки',    price:1100,desc:'Для самых любимых корабликов'},
+  {id:'fire',   name:'Огненный след',price:-1,chal:'cTime',desc:'Пламя за кормой'}
 ];
 const UPGRADES=[
   {id:'lives', name:'Крепкий борт',   desc:'+1 жизнь в каждом заплыве', prices:[300,800]},
@@ -628,8 +654,8 @@ const ACH=[
   {id:'lan1000',name:'Фонарщик',        desc:'Собрать 1000 фонариков за всё время', rw:150, test:s=>s.stats.lan>=1000},
   {id:'boss',   name:'Гроза щук',       desc:'Победить щуку-великана', rw:100, test:s=>s.stats.bosses>=1},
   {id:'nohit',  name:'Ни царапины',     desc:'Проплыть 1000 м без столкновений', rw:150, test:(s,r)=>r&&r.nohit>=1000},
-  {id:'skins',  name:'Коллекционер',    desc:'Собрать все кораблики', rw:300, test:s=>SKINS.every(k=>s.skins.includes(k.id))},
-  {id:'maps',   name:'Путешественник',  desc:'Открыть все реки', rw:300, test:s=>MAPS.every(k=>s.maps.includes(k.id))},
+  {id:'skins',  name:'Коллекционер',    desc:'Собрать все кораблики', rw:300, test:s=>SKINS.filter(k=>k.price>=0).every(k=>s.skins.includes(k.id))},
+  {id:'maps',   name:'Путешественник',  desc:'Открыть все реки', rw:300, test:s=>MAPS.filter(k=>k.price>=0).every(k=>s.maps.includes(k.id))},
   {id:'story',  name:'Дело закрыто',    desc:'Раскрыть дело о погасших фонарях', rw:200, test:s=>!!s.cases[0].solved},
   {id:'case2',  name:'Свет маяка',      desc:'Раскрыть дело о пропавшем маяке', rw:250, test:s=>!!s.cases[1].solved},
   {id:'lvl10',  name:'Опытный капитан', desc:'Достичь 10 уровня', rw:200, test:s=>s.level>=10},
@@ -760,7 +786,8 @@ const PETS=[
   {id:'none',  name:'Без попутчика',price:0,   desc:'Плыть одному тоже хорошо'},
   {id:'cat',   name:'Кошка Улика',  price:600, desc:'Сама ловит фонарики рядом с корабликом'},
   {id:'puppy', name:'Щенок Бублик', price:900, desc:'Один раз за заплыв спасает от удара'},
-  {id:'parrot',name:'Попугай Кеша', price:1200,desc:'Приносит фонарик каждые 8 секунд'}
+  {id:'parrot',name:'Попугай Кеша', price:1200,desc:'Приносит фонарик каждые 8 секунд'},
+  {id:'owl',   name:'Сова Мудрая',  price:-1,chal:'cCases',desc:'Подсвечивает улики: они крупнее и ярче, а фонарики тянутся к кораблику'}
 ];
 const BOSSES={
   pike:{name:'Щука-великан',left:'Щука уплыла'},
@@ -776,6 +803,16 @@ const MODES=[
   {id:'time', name:'На время',   desc:'60 секунд: соберите как можно больше фонариков'},
   {id:'duo',  name:'Вдвоём',     desc:'Два кораблика на одном экране. Левая половина — игрок 1, правая — игрок 2'},
   {id:'week', name:'Турнир недели',desc:'Одна трасса на всю неделю. Сравнивайтесь с другими в таблице'}
+];
+// ---- hard challenges with exclusive rewards ----
+const CHALLENGES=[
+  {id:'c5000', name:'Дальнее плавание', desc:'Проплыть 5000 м за один заплыв', goal:5000, prog:(s,r)=>r?r.m:0, kind:'max', reward:['skins','phoenix']},
+  {id:'c200',  name:'Ловец света',      desc:'Собрать 200 фонариков за один заплыв', goal:200, prog:(s,r)=>r?r.lan:0, kind:'max', reward:['skins','crystal']},
+  {id:'cHard', name:'Железные нервы',   desc:'В хардкоре проплыть 1500 м', goal:1500, prog:(s,r)=>r&&r.kind==='hard'?r.m:0, kind:'max', reward:['skins','ghost']},
+  {id:'cBoss', name:'Охотник на боссов',desc:'Победить всех 5 боссов', goal:5, prog:s=>s.bossKinds.length, reward:['skins','crown']},
+  {id:'cTime', name:'Быстрые руки',     desc:'В режиме «На время» собрать 80 фонариков', goal:80, prog:(s,r)=>r&&r.kind==='time'?r.lan:0, kind:'max', reward:['trails','fire']},
+  {id:'cCases',name:'Великий сыщик',    desc:'Раскрыть оба дела Лиса и Улики', goal:2, prog:s=>s.cases.filter(c=>c.solved).length, reward:['pets','owl']},
+  {id:'cLevel',name:'Полярник',         desc:'Достичь 15 уровня', goal:15, prog:s=>s.level, reward:['maps','aurora']}
 ];
 const xpNeed=l=>Math.round(120*Math.pow(l,1.35));
 
@@ -793,7 +830,7 @@ const trailById=id=>TRAILS.find(m=>m.id===id)||TRAILS[0];
 function defaults(){return{coins:0,best:0,skins:['paper'],maps:['night'],trails:['none'],skin:'paper',map:'night',trail:'none',
   mute:false,music:true,upg:{},ach:{},stats:{runs:0,lan:0,bosses:0,dashes:0,daily:0,chal:0,gold:0,duo:0},
   daily:{date:'',q:[]},gift:{last:'',streak:0},cases:[{ch:0,solved:false},{ch:0,solved:false}],dayBest:{date:'',score:0},weekBest:{week:'',score:0},name:'',upd:0,
-  pets:['none'],pet:'none',xp:0,level:1,chests:0,settings:{mus:.7,sfx:.8,sens:1,left:false,track:'auto',voice:true}}}
+  pets:['none'],pet:'none',bossKinds:[],chal:{},chalProg:{},xp:0,level:1,chests:0,settings:{mus:.7,sfx:.8,sens:1,left:false,track:'auto',voice:true}}}
 function sanitize(o){
   const d=defaults();o=(o&&typeof o==='object')?o:{};
   const s=Object.assign(d,o);
@@ -810,6 +847,7 @@ function sanitize(o){
   s.cases=[0,1].map(i=>{const c=Object.assign({ch:0,solved:false},(Array.isArray(s.cases)&&s.cases[i])||{});c.ch=Math.max(0,Math.min(CASES[i].chapters.length,c.ch|0));c.solved=!!c.solved;return c});
   s.story=s.cases[CASE_I];
   s.pets=(Array.isArray(s.pets)?s.pets:[]).filter(id=>PETS.some(p=>p.id===id));if(!s.pets.includes('none'))s.pets.unshift('none');if(!s.pets.includes(s.pet))s.pet='none';
+  s.bossKinds=[...new Set((Array.isArray(s.bossKinds)?s.bossKinds:[]).filter(k=>BOSSES[k]))];s.chal=(s.chal&&typeof s.chal==='object')?s.chal:{};s.chalProg=(s.chalProg&&typeof s.chalProg==='object')?s.chalProg:{};
   s.xp=Math.max(0,+s.xp||0);s.level=Math.max(1,s.level|0);s.chests=Math.max(0,s.chests|0);
   s.settings=Object.assign(defaults().settings,s.settings||{});
   for(const k of ['mus','sfx'])s.settings[k]=Math.max(0,Math.min(1,+s.settings[k]));s.settings.sens=Math.max(.5,Math.min(2,+s.settings.sens||1));
@@ -835,7 +873,7 @@ function mergeSaves(a,b){ // a = cloud, b = local
   for(const up of UPGRADES)m.upg[up.id]=Math.max((a.upg||{})[up.id]||0,(b.upg||{})[up.id]||0);
   for(const k in m.stats)m.stats[k]=Math.max((a.stats||{})[k]||0,(b.stats||{})[k]||0);
   for(const i of [0,1]){const ca=(a.cases||[])[i]||{},cb=(b.cases||[])[i]||{};m.cases[i].solved=!!(ca.solved||cb.solved);m.cases[i].ch=Math.max(ca.ch||0,cb.ch||0)}
-  m.pets=[...new Set([...m.pets,...(other.pets||[])])];m.xp=Math.max(a.xp||0,b.xp||0);m.level=Math.max(a.level||1,b.level||1);
+  m.pets=[...new Set([...m.pets,...(other.pets||[])])];m.bossKinds=[...new Set([...m.bossKinds,...(other.bossKinds||[])])];m.chal=Object.assign({},other.chal||{},m.chal||{});m.xp=Math.max(a.xp||0,b.xp||0);m.level=Math.max(a.level||1,b.level||1);
   m.upd=Math.max(a.upd||0,b.upd||0);
   return sanitize(m);
 }
@@ -885,9 +923,18 @@ function checkAch(run){
   for(const a of ACH){if(save.ach[a.id])continue;
     let ok=false;try{ok=a.test(save,run)}catch(e){}
     if(ok){save.ach[a.id]=Date.now();save.coins+=a.rw;achQueue.push(a)}}
+  checkChallenges(run);
   if(achQueue.length&&!toastBusy())flushAch();
 }
-function flushAch(){const a=achQueue.shift();if(!a)return;toast('Достижение «'+a.name+'»: +'+a.rw+' фонариков',2200);fx.cheer();setTimeout(flushAch,2300)}
+function chalProgress(c,run){const v=c.prog(save,run)||0;if(c.kind==='max'){save.chalProg[c.id]=Math.max(save.chalProg[c.id]||0,v);return save.chalProg[c.id]}return v}
+const rewardItem=([list,id])=>({skins:SKINS,trails:TRAILS,pets:PETS,maps:MAPS}[list]).find(x=>x.id===id);
+function checkChallenges(run){
+  for(const c of CHALLENGES){if(save.chal[c.id])continue;
+    let p=0;try{p=chalProgress(c,run)}catch(e){}
+    if(p>=c.goal){save.chal[c.id]=Date.now();const [list,id]=c.reward;if(!save[list].includes(id))save[list].push(id);
+      const it=rewardItem(c.reward);achQueue.push({name:c.name,rw:0,special:'Испытание «'+c.name+'» пройдено! Награда: '+it.name})}}
+}
+function flushAch(){const a=achQueue.shift();if(!a)return;toast(a.special||('Достижение «'+a.name+'»: +'+a.rw+' фонариков'),a.special?3200:2200);if(a.special)confetti();fx.cheer();setTimeout(flushAch,2300)}
 
 // ---- daily gift ----
 function giftAvailable(){return save.gift.last!==todayStr()}
@@ -1393,7 +1440,7 @@ function startBoss(){const k=bossKind();S.boss={kind:k,ph:'enter',x:W/2,y:-160,t
   $('bossName').textContent=BOSSES[k].name;$('bossbar').hidden=false;$('bossHp').style.width='100%';fx.boss();toast(BOSSES[k].name+'! Уворачивайтесь от бросков')}
 function bossDefeated(){
   const k=S.boss.kind,rw=AB.bossX2?50:25;
-  S.boss=null;$('bossbar').hidden=true;S.lan+=rw;S.bossWon=true;save.stats.bosses++;quest('boss',1);
+  S.boss=null;$('bossbar').hidden=true;S.lan+=rw;S.bossWon=true;save.stats.bosses++;if(!save.bossKinds.includes(k))save.bossKinds.push(k);quest('boss',1);
   burst(W/2,120,'#ffb347',40,260);fx.cheer();toast(BOSSES[k].left+'! +'+rw+' фонариков');S.nextBoss=S.dist+10000;checkAch();
   if(S.kind==='story'&&curCh().boss)setTimeout(()=>{if(S.mode==='play')chapterDone()},900);
 }
@@ -1436,7 +1483,7 @@ function collideBoat(b,o,dt){
   if(o.k==='lan'||o.k==='clue'||o.k==='pow'||o.k==='gold'){
     const mr=magnetR();
     if(S.pw.magnet>0&&o.k!=='pow'&&dd<mr){o.x+=ddx*Math.min(1,dt*6);o.y+=ddy*Math.min(1,dt*6)}
-    else if(save.pet==='cat'&&b===boat&&o.k==='lan'&&dd<90){o.x+=ddx*Math.min(1,dt*5);o.y+=ddy*Math.min(1,dt*5)}
+    else if((save.pet==='cat'||save.pet==='owl')&&b===boat&&(o.k==='lan'||(save.pet==='owl'&&o.k==='clue'))&&dd<(save.pet==='owl'?130:90)){o.x+=ddx*Math.min(1,dt*5);o.y+=ddy*Math.min(1,dt*5)}
     if(dd<(o.k==='lan'?26:30))collect(o,b);
     return}
   if(o.k==='log'){const cx=Math.max(o.x,Math.min(b.x,o.x+o.w)),cy=Math.max(o.y-o.h/2,Math.min(b.y,o.y+o.h/2));if(Math.hypot(b.x-cx,b.y-cy)<13)hit(b)}
@@ -1544,7 +1591,7 @@ function endRun(success){
   if(S.kind==='week'){const wk=isoWeek();if(save.weekBest.week!==wk)save.weekBest={week:wk,score:0};if(score>save.weekBest.score){save.weekBest.score=score;dayNew=true}}
   if(S.kind==='story'&&success&&save.story.ch===S.ch)save.story.ch=Math.min(STORY.length,S.ch+1);
   const lvlBefore=save.level,xpGain=Math.floor(meters/10)+S.lan*2+(success&&S.kind==='story'?50:0);const ups=addXP(xpGain);
-  checkAch({m:meters,lan:S.lan,nohit:S.nohit,stormClean:S.stormClean});
+  checkAch({m:meters,lan:S.lan,nohit:S.nohit,stormClean:S.stormClean,kind:S.kind});
   persist();updBadge();showPlaceAfterRun();
   $('fScore').textContent=score;$('fDist').textContent=meters;$('fLan').textContent=S.lan;$('fEarn').textContent=earned;
   $('fMult').textContent=(mult!==1?'×'+(Math.round(mult*100)/100)+' ':'')+bonusNote;
@@ -1601,6 +1648,7 @@ function drawBoatAt(c,x,y,tilt,sk,sc,now){
   c.save();c.translate(x,y);c.rotate(Math.max(-.35,Math.min(.35,tilt)));c.scale(sc,sc);
   c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(3,6,15,24,0,0,7);c.fill();
   if(sk.shape&&sk.shape!=='paper'&&sk.shape!=='sail'){drawShape(c,sk,now||0);c.restore();return}
+  if(sk.ghost)c.globalAlpha=.55+.15*Math.sin((now||0)*2);
   if(sk.pattern==='rainbow'){const h=((now||0)*60)%360;sk={...sk,hull:`hsl(${h},85%,68%)`,f1:`hsl(${(h+40)%360},85%,60%)`,f2:`hsl(${(h+80)%360},85%,55%)`}}
   const hull=()=>{c.beginPath();c.moveTo(0,-26);c.lineTo(13,-8);c.lineTo(12,16);c.lineTo(0,23);c.lineTo(-12,16);c.lineTo(-13,-8);c.closePath()};
   if(sk.glow){c.shadowColor=sk.glow;c.shadowBlur=16}
@@ -1614,6 +1662,9 @@ function drawBoatAt(c,x,y,tilt,sk,sc,now){
   c.strokeStyle=sk.line;c.lineWidth=sk.glow?1.6:1;
   if(sk.glow){c.shadowColor=sk.glow;c.shadowBlur=10;hull();c.stroke()}
   c.beginPath();c.moveTo(0,-26);c.lineTo(0,23);c.moveTo(-13,-8);c.lineTo(0,4);c.lineTo(13,-8);c.stroke();c.shadowBlur=0;
+  if(sk.pattern==='flame'){for(let i=0;i<5;i++){const fl=Math.sin((now||0)*9+i)*2;c.fillStyle=i%2?'#ffd23f':'#ff5a1f';c.beginPath();c.moveTo(-8+i*4,18);c.quadraticCurveTo(-9+i*4,26+fl,-6+i*4,30+fl);c.quadraticCurveTo(-5+i*4,24,-4+i*4,18);c.fill()}}
+  if(sk.pattern==='crown'){c.fillStyle='#f2c14c';c.beginPath();c.moveTo(-7,-2);c.lineTo(-7,-10);c.lineTo(-3.5,-6);c.lineTo(0,-12);c.lineTo(3.5,-6);c.lineTo(7,-10);c.lineTo(7,-2);c.closePath();c.fill();c.fillStyle='#e8473b';c.beginPath();c.arc(0,-5,1.6,0,7);c.fill()}
+  if(sk.ghost){c.fillStyle='#2a3a4a';c.beginPath();c.ellipse(-3.5,-6,1.6,2.4,0,0,7);c.ellipse(3.5,-6,1.6,2.4,0,0,7);c.fill()}
   if(sk.pattern==='santa'){c.fillStyle='#d8312b';c.beginPath();c.moveTo(-9,-12);c.quadraticCurveTo(0,-34,9,-12);c.closePath();c.fill();c.fillStyle='#fff';rr(c,-10,-14,20,5,2.5);c.fill();c.beginPath();c.arc(4,-30,3.2,0,7);c.fill()}
   if(sk.pattern==='skull'){c.fillStyle='#f3eee2';c.beginPath();c.arc(-5.5,-6,3,0,7);c.fill();c.fillRect(-7.3,-4,3.6,2.4);
     c.fillStyle=sk.f1;c.fillRect(-6.8,-6.6,1.2,1.2);c.fillRect(-5,-6.6,1.2,1.2);
@@ -1798,6 +1849,9 @@ function drawPet(c,id,x,y,now){
   else if(id==='puppy'){c.fillStyle='#d9a066';c.beginPath();c.ellipse(0,2+bob,5.5,6.5,0,0,7);c.fill();c.beginPath();c.arc(0,-5+bob,5,0,7);c.fill();
     c.fillStyle='#8a5a32';c.beginPath();c.ellipse(-5,-4+bob,2,4,.3,0,7);c.ellipse(5,-4+bob,2,4,-.3,0,7);c.fill();
     c.fillStyle='#1b1408';c.beginPath();c.arc(0,-3+bob,1.3,0,7);c.arc(-2,-6+bob,.9,0,7);c.arc(2,-6+bob,.9,0,7);c.fill()}
+  else if(id==='owl'){c.fillStyle='#8a6a4a';c.beginPath();c.ellipse(0,1+bob,6,7.5,0,0,7);c.fill();c.fillStyle='#b8946a';c.beginPath();c.ellipse(0,3+bob,3.6,4.5,0,0,7);c.fill();
+    c.fillStyle='#8a6a4a';c.beginPath();c.moveTo(-6,-5+bob);c.lineTo(-4,-10+bob);c.lineTo(-2,-6+bob);c.moveTo(6,-5+bob);c.lineTo(4,-10+bob);c.lineTo(2,-6+bob);c.fill();
+    c.fillStyle='#ffd23f';c.beginPath();c.arc(-2.6,-3+bob,2.4,0,7);c.arc(2.6,-3+bob,2.4,0,7);c.fill();c.fillStyle='#111';c.beginPath();c.arc(-2.6,-3+bob,1.1,0,7);c.arc(2.6,-3+bob,1.1,0,7);c.fill()}
   else if(id==='parrot'){const f=Math.sin(now*12)*3;c.fillStyle='#3fbf5a';c.beginPath();c.ellipse(0,0+bob,4.5,7,0,0,7);c.fill();
     c.fillStyle='#2f9a48';c.beginPath();c.ellipse(-5,1+bob,2.5,5+f*.3,-.4,0,7);c.ellipse(5,1+bob,2.5,5-f*.3,.4,0,7);c.fill();
     c.fillStyle='#e8473b';c.beginPath();c.arc(0,-7+bob,3.5,0,7);c.fill();c.fillStyle='#ffd23f';c.beginPath();c.moveTo(0,-10+bob);c.lineTo(2,-13+bob);c.lineTo(-1,-11+bob);c.fill()}
@@ -1856,6 +1910,7 @@ function drawTrailP(c,p){
     case 'rainbow':c.fillStyle=`hsl(${p.h},90%,65%)`;c.beginPath();c.arc(p.x,p.y,3.5*p.s,0,7);c.fill();break;
     case 'stars':c.fillStyle='#fff';star5(c,p.x,p.y,3.5*p.s*(.6+.4*Math.sin(p.l*20)));c.fill();break;
     case 'hearts':c.fillStyle='#ff7aa8';heart(c,p.x,p.y,5*p.s);c.fill();break;
+    case 'fire':{const r=(2+4*a)*p.s;const g=c.createRadialGradient(p.x,p.y,0,p.x,p.y,r*1.6);g.addColorStop(0,a>.5?'#fff3b0':'#ffd23f');g.addColorStop(.5,'#ff7a2a');g.addColorStop(1,'rgba(255,60,20,0)');c.fillStyle=g;c.beginPath();c.arc(p.x,p.y,r*1.6,0,7);c.fill();break}
   }
   c.globalAlpha=1;
 }
@@ -1865,6 +1920,8 @@ function drawWorld(c,w,h,M,scroll,now,edgeFn,bankW){
   const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,M.top);g.addColorStop(1,M.bot);
   c.fillStyle=g;c.fillRect(-20,-20,w+40,h+40);
   if(M.id==='space'){c.fillStyle='#fff';for(let i=0;i<60;i++){const sx=hash1(i)*w,sy=(hash1(i+50)*h+scroll*.15)%h;c.globalAlpha=.3+.5*hash1(i+9);c.fillRect(sx,sy,1.5,1.5)}c.globalAlpha=1}
+  if(M.aurora){for(let i=0;i<3;i++){c.beginPath();c.moveTo(0,h*(.08+i*.07));for(let x=0;x<=w;x+=20)c.lineTo(x,h*(.08+i*.07)+Math.sin(x*.012+now*.6+i*1.7)*h*.04);
+      c.lineTo(w,h*(.32+i*.05));c.lineTo(0,h*(.32+i*.05));c.closePath();const g2=c.createLinearGradient(0,0,0,h*.4);g2.addColorStop(0,`rgba(${i===1?'160,120,255':'90,255,170'},.0)`);g2.addColorStop(.4,`rgba(${i===1?'160,120,255':'90,255,170'},.16)`);g2.addColorStop(1,'rgba(90,255,170,0)');c.fillStyle=g2;c.fill()}}
   const mx=w*.68,my=h*.2;const mg=c.createRadialGradient(mx,my,0,mx,my,h*.45);
   mg.addColorStop(0,`rgba(${M.glow},.14)`);mg.addColorStop(1,`rgba(${M.glow},0)`);c.fillStyle=mg;c.fillRect(0,0,w,h);
   c.strokeStyle=`rgba(${M.glow},.2)`;c.lineCap='round';c.lineWidth=2;
@@ -2208,17 +2265,18 @@ function renderShop(){
     return;
   }
   const cfg={pets:[PETS,'pets','pet',previewPet],skins:[SKINS,'skins','skin',previewSkin],maps:[MAPS,'maps','map',previewMap],trails:[TRAILS,'trails','trail',previewTrail]}[shopTab];
-  const [list0,ownKey,curKey,prev]=cfg;const list=[...list0].sort((a,b)=>a.price-b.price);
+  const [list0,ownKey,curKey,prev]=cfg;const list=[...list0].sort((a,b)=>(a.price<0?1e9:a.price)-(b.price<0?1e9:b.price));
   for(const it of list){
     const owned=save[ownKey].includes(it.id),cur=save[curKey]===it.id;
     const el=document.createElement('div');el.className='item'+(cur?' on':'');
-    const c=document.createElement('canvas');c.width=320;c.height=240;el.appendChild(c);
+    const c=document.createElement('canvas');c.width=260;c.height=260;el.appendChild(c);
     const meta=document.createElement('div');meta.className='meta';
     const n=document.createElement('div');n.className='name';n.textContent=it.name;
     const d=document.createElement('div');d.className='desc';d.textContent=it.desc+(shopTab==='maps'?' · ×'+it.mult+' фонариков':'')+(shopTab==='skins'&&ABIL[it.id]?' · Способность: '+ABIL[it.id].text:'');
     const b=document.createElement('button');b.className='buy';
     if(cur){b.className+=' cur';b.textContent='Выбрано'}
     else if(owned){b.className+=' own';b.textContent='Выбрать';b.onclick=()=>{save[curKey]=it.id;afterPick();toast('Выбрано: '+it.name)}}
+    else if(it.price<0){const ch=CHALLENGES.find(c=>c.id===it.chal);b.className+=' poor';b.textContent='Испытание';d.textContent='Награда за испытание «'+ch.name+'»: '+ch.desc.toLowerCase()+'.';b.onclick=()=>toast(ch.desc,2400)}
     else{b.innerHTML='<span class="dot"></span><span></span>';b.lastChild.textContent=it.price;
       if(save.coins<it.price){b.className+=' poor';b.onclick=()=>toast('Нужно ещё '+(it.price-save.coins)+' фонариков')}
       else b.onclick=()=>{save.coins-=it.price;save[ownKey].push(it.id);save[curKey]=it.id;fx.click();toast('Куплено: '+it.name);checkAch();afterPick()}}
@@ -2247,6 +2305,15 @@ function renderQuests(){
     if(goal){const bar=document.createElement('div');bar.className='bar';const i=document.createElement('i');i.style.width=Math.min(100,prog/goal*100)+'%';bar.appendChild(i);el.appendChild(bar)}
     L.appendChild(el);
   };
+  if(qTab==='chal'){
+    const h=document.createElement('p');h.style.maxWidth='none';h.textContent='Трудные испытания. За каждое — особая награда, которую нельзя купить в лавке.';L.appendChild(h);
+    for(const c of CHALLENGES){const done=!!save.chal[c.id];let p=0;try{p=c.kind==='max'?(save.chalProg[c.id]||0):c.prog(save)}catch(e){}
+      const it=rewardItem(c.reward);const el=document.createElement('div');el.className='q'+(done?' done':'');
+      const t=document.createElement('div');t.className='t';t.textContent=c.name;const r=document.createElement('div');r.className='rw';r.textContent=it.name;
+      const d=document.createElement('div');d.className='d';d.textContent=c.desc+(done?' · получено!':' · '+Math.min(Math.floor(p),c.goal)+' из '+c.goal);
+      const bar=document.createElement('div');bar.className='bar';const i=document.createElement('i');i.style.width=Math.min(100,p/c.goal*100)+'%';bar.appendChild(i);
+      el.append(t,r,d,bar);L.appendChild(el)}
+    return}
   if(qTab==='daily'){
     if(giftAvailable())row('Подарок дня','День '+(giftDayIndex()+1)+' серии',0,0,GIFTS[giftDayIndex()],()=>{const a=takeGift();fx.cheer();toast('+'+a+' фонариков');renderQuests();refreshMenus()});
     for(const q of save.daily.q){
